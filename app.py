@@ -5,7 +5,7 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Il Gioco dei Muretti", page_icon="🧱", layout="centered")
 
-# 2. Stile CSS per rendere tutto grande e "a misura di bambino"
+# 2. Stile CSS per rendere tutto grande e accessibile
 st.markdown("""
     <style>
     .titolo { font-size: 50px !important; text-align: center; color: #FF4B4B; font-weight: bold; margin-bottom: 10px; }
@@ -18,16 +18,18 @@ st.markdown("""
 
 st.markdown('<p class="titolo">🧱 Il Gioco dei Muretti</p>', unsafe_allow_html=True)
 
-# 3. Impostazioni del muretto nella sidebar
+# 3. Impostazioni nella sidebar
 with st.sidebar:
     st.header("⚙️ Impostazioni")
+    # Il muretto minimo è il 2 (1+1)
     target = st.number_input("Muretto del numero:", min_value=2, max_value=10, value=6)
     st.write("---")
-    st.info("I bambini devono indovinare quanti mattoncini mancano per completare il muretto.")
+    st.write("💡 In questa modalità lo zero non è presente.")
 
-# 4. Inizializzazione della sessione (FIXED: aggiunto tutto il necessario)
+# 4. Inizializzazione della sessione
+# Cambiato il range per escludere lo zero: parte_nota va da 1 a target-1
 if 'parte_nota' not in st.session_state or st.session_state.get('current_target') != target:
-    st.session_state.parte_nota = random.randint(0, target)
+    st.session_state.parte_nota = random.randint(1, target - 1)
     st.session_state.current_target = target
     st.session_state.messaggio_errore = False
     st.session_state.ultima_scelta_errata = None
@@ -37,18 +39,19 @@ if 'parte_nota' not in st.session_state or st.session_state.get('current_target'
 mancanti_reali = target - st.session_state.parte_nota
 
 st.markdown(f'<p class="info-testo">Siamo nel muretto del <span class="evidenza">{target}</span></p>', unsafe_allow_html=True)
-st.markdown(f'<p class="info-testo">Abbiamo già <span class="evidenza">{st.session_state.parte_nota}</span> mattoncini blu:</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="info-testo">Abbiamo <span class="evidenza">{st.session_state.parte_nota}</span> mattoncini blu:</p>', unsafe_allow_html=True)
 
 # Visualizzazione dei mattoncini attuali
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
 st.markdown(f'<p class="info-testo">Quanti ne mancano per arrivare a <b>{target}</b>?</p>', unsafe_allow_html=True)
 
-# 6. Pulsantiera numerica
-cols = st.columns(target + 1)
+# 6. Pulsantiera numerica (Parte da 1)
+# Creiamo colonne solo per i numeri da 1 a target-1
+cols = st.columns(target) # target colonne per ospitare comodamente i bottoni
 scelta = None
-for i in range(target + 1):
-    if cols[i].button(str(i), key=f"btn_{i}"):
+for i in range(1, target):
+    if cols[i-1].button(str(i), key=f"btn_{i}"):
         scelta = i
 
 # 7. Gestione Risposta
@@ -60,9 +63,9 @@ if scelta is not None:
         st.balloons()
         st.success(f"BRAVISSIMO! {st.session_state.parte_nota} + {scelta} = {target}")
         
-        # Pausa e reset automatico
         time.sleep(3) 
-        st.session_state.parte_nota = random.randint(0, target)
+        # Nuovo muretto senza zero
+        st.session_state.parte_nota = random.randint(1, target - 1)
         st.session_state.indovinato = False
         st.rerun()
     else:
@@ -70,12 +73,12 @@ if scelta is not None:
         st.session_state.ultima_scelta_errata = scelta
         st.session_state.indovinato = False
 
-# Mostra errore se la scelta è sbagliata
+# Messaggio di errore
 if st.session_state.messaggio_errore and not st.session_state.indovinato:
     st.error(f"Riprova! Se ne aggiungi {st.session_state.ultima_scelta_errata} non arrivi a {target}.")
     st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * st.session_state.ultima_scelta_errata}</p>', unsafe_allow_html=True)
 
-# 8. Tabella di aiuto
-with st.expander("Aiuto: guarda tutti i muretti del " + str(target)):
-    for i in range(target + 1):
+# 8. Tabella di aiuto (Senza lo zero)
+with st.expander("Aiuto: guarda i muretti del " + str(target)):
+    for i in range(1, target):
         st.write(f"{i} + {target-i} = {target} | {'🟦'*i}{'🟧'*(target-i)}")
