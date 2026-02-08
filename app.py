@@ -5,8 +5,7 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS "MODALITÀ GUERRA" PER MOBILE
-# Qui usiamo selettori che colpiscono direttamente i widget di controllo
+# 2. CSS "GIGANTE" PER MOBILE
 st.markdown("""
     <style>
     .header-muretto { 
@@ -16,34 +15,46 @@ st.markdown("""
     .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
     .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; }
 
-    /* FORZA IL SEGMENTED CONTROL A STARE IN ORIZZONTALE E DIVENTARE GIGANTE */
+    /* FORZA IL SEGMENTED CONTROL A DIVENTARE UNA TASTIERA GIGANTE */
     div[data-testid="stSegmentedControl"] > div {
         display: flex !important;
-        flex-direction: row !important; /* OBBLIGATORIO */
-        flex-wrap: wrap !important;   /* VAI A CAPO SE FINISCE LO SPAZIO, NON PRIMA */
+        flex-direction: row !important; 
+        flex-wrap: wrap !important;   
         justify-content: center !important;
-        gap: 10px !important;
+        gap: 15px !important; /* Più spazio tra i tasti per non sbagliare */
     }
 
     div[data-testid="stSegmentedControl"] button {
-        flex: 0 1 80px !important; /* Dimensione fissa 80px */
-        height: 80px !important;
-        min-width: 80px !important;
-        font-size: 35px !important;
-        font-weight: bold !important;
-        border: 3px solid #1f77b4 !important;
-        border-radius: 15px !important;
+        flex: 0 1 120px !important; /* LARGHEZZA GIGANTE */
+        height: 120px !important;    /* ALTEZZA GIGANTE */
+        min-width: 120px !important;
+        font-size: 50px !important;  /* NUMERO ENORME */
+        font-weight: 900 !important;
+        border: 4px solid #1f77b4 !important;
+        border-radius: 20px !important;
         background-color: white !important;
+        box-shadow: 0px 6px 0px #1a5e8f !important; /* Effetto 3D per bimbi */
     }
 
     /* Colore quando selezionato */
     div[data-testid="stSegmentedControl"] button[aria-checked="true"] {
         background-color: #1f77b4 !important;
         color: white !important;
+        transform: translateY(4px);
+        box-shadow: 0px 2px 0px #1a5e8f !important;
     }
     
-    /* Nasconde l'etichetta inutile */
     div[data-testid="stSegmentedControl"] label { display: none; }
+
+    /* Adattamento per schermi molto stretti */
+    @media (max-width: 400px) {
+        div[data-testid="stSegmentedControl"] button {
+            flex: 0 1 100px !important;
+            height: 100px !important;
+            min-width: 100px !important;
+            font-size: 40px !important;
+        }
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -68,8 +79,7 @@ st.markdown(f'<div class="header-muretto">MURETTO DEL {target}</div>', unsafe_al
 st.markdown(f'<div class="operazione"><span style="color: blue;">{st.session_state.parte_nota}</span> <span style="font-size: 30px; color: #666;">e</span> <span style="color: #ff7f0e;">?</span></div>', unsafe_allow_html=True)
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. IL CONTROLLO CHE NON SI PIEGA AL MOBILE
-# Usiamo il controllo segmentato perché è l'unico che possiamo forzare via CSS a stare in riga
+# 6. TASTIERA "PULSANTONI"
 scelta = st.segmented_control(
     "Scegli", 
     options=[i for i in range(1, target)], 
