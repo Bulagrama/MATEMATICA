@@ -5,47 +5,41 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS "GIGANTE" - Questo forza i bottoni a essere enormi e stare vicini
+# 2. CSS PER TESTI E BOTTONI FANTASMA
 st.markdown("""
     <style>
-    /* Titoli */
     .header-muretto { 
         background-color: #FF4B4B; color: white; padding: 15px; 
         border-radius: 15px; text-align: center; font-size: 30px !important; font-weight: bold;
     }
-    .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
-    .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
-
-    /* FORZA IL LAYOUT ORIZZONTALE DEI BOTTONI */
-    [data-testid="stHorizontalBlock"] {
+    .operazione { font-size: 60px; text-align: center; font-weight: bold; margin: 15px 0; }
+    .mattoncino-testo { font-size: 65px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
+    
+    /* Rendiamo i bottoni di Streamlit dei quadratoni giganti e forziamo l'allineamento */
+    div[data-testid="stHorizontalBlock"] {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
         justify-content: center !important;
         gap: 10px !important;
     }
-
-    [data-testid="column"] {
-        flex: 0 1 auto !important;
-        min-width: 85px !important; /* Larghezza minima per farli stare vicini */
+    
+    div[data-testid="column"] {
+        flex: 0 1 20% !important; /* Forza 5 bottoni per riga circa */
+        min-width: 80px !important;
+        max-width: 100px !important;
     }
 
-    /* BOTTONI GIGANTI */
     .stButton > button {
-        width: 85px !important;
-        height: 85px !important;
-        font-size: 35px !important;
+        width: 80px !important;
+        height: 80px !important;
+        font-size: 40px !important;
         font-weight: bold !important;
         border-radius: 15px !important;
         background-color: white !important;
         border: 4px solid #1f77b4 !important;
         color: #1f77b4 !important;
-        box-shadow: 0px 5px 0px #1a5e8f !important;
-    }
-    
-    .stButton > button:active {
-        box-shadow: 0px 1px 0px #1a5e8f !important;
-        transform: translateY(4px);
+        box-shadow: 0px 4px 0px #1a5e8f !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -57,8 +51,7 @@ with st.sidebar:
     metodo = st.radio("Metodo:", ["Casuale", "Ordinato"])
 
 # 4. Inizializzazione Sessione
-if 'domanda_id' not in st.session_state:
-    st.session_state.domanda_id = 0
+if 'domanda_id' not in st.session_state: st.session_state.domanda_id = 0
 if 'current_target' not in st.session_state or st.session_state.current_target != target:
     st.session_state.current_target = target
     st.session_state.ordine_attuale = 1
@@ -69,13 +62,13 @@ mancanti_reali = target - st.session_state.parte_nota
 
 # 5. Interfaccia
 st.markdown(f'<div class="header-muretto">IL MURETTO DEL {target}</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="operazione"><span style="color: blue;">{st.session_state.parte_nota}</span> <span style="font-size: 35px; color: #666;">e</span> <span style="color: #ff7f0e;">?</span></div>', unsafe_allow_html=True)
+st.markdown(f'<div class="operazione"><span style="color: blue;">{st.session_state.parte_nota}</span> <span style="font-size: 40px; color: #666;">e</span> <span style="color: #ff7f0e;">?</span></div>', unsafe_allow_html=True)
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. TASTIERA GIGANTE ORIZZONTALE
-# Creiamo le colonne dinamicamente. Su mobile non andranno in colonna grazie al CSS sopra.
-cols = st.columns(target - 1)
+# 6. TASTIERA GIGANTE (Trucco CSS Flexbox)
 scelta = None
+# Creiamo un numero fisso di colonne molto piccole
+cols = st.columns(10) 
 
 for i in range(1, target):
     with cols[i-1]:
@@ -88,7 +81,6 @@ if scelta is not None:
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"🟧" * scelta}</p>', unsafe_allow_html=True)
         st.balloons()
         st.success(f"BRAVO! {st.session_state.parte_nota} e {scelta} fanno {target}")
-        
         time.sleep(2)
         
         if metodo == "Casuale":
