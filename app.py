@@ -1,73 +1,78 @@
 import streamlit as st
 import random
+import time
 
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Il Gioco dei Muretti", page_icon="🧱", layout="centered")
 
-# 2. Stile CSS per rendere tutto grande e leggibile
+# 2. Stile CSS per rendere tutto grande e "a misura di bambino"
 st.markdown("""
     <style>
-    .titolo { font-size: 50px !important; text-align: center; color: #FF4B4B; font-weight: bold; }
-    .stButton>button { font-size: 30px !important; width: 100%; height: 60px; border-radius: 10px; }
-    .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 5px; }
-    .info-testo { font-size: 25px; text-align: center; }
+    .titolo { font-size: 50px !important; text-align: center; color: #FF4B4B; font-weight: bold; margin-bottom: 0px; }
+    .stButton>button { font-size: 30px !important; width: 100%; height: 60px; border-radius: 15px; background-color: #f0f2f6; }
+    .mattoncino-testo { font-size: 70px; text-align: center; letter-spacing: 5px; line-height: 1; }
+    .info-testo { font-size: 28px; text-align: center; margin-top: 20px; }
+    .evidenza { color: #1f77b4; font-weight: bold; font-size: 35px; }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<p class="titolo">🧱 Il Gioco dei Muretti</p>', unsafe_allow_html=True)
 
-# 3. Impostazioni del gioco nella sidebar
+# 3. Impostazioni del muretto nella sidebar
 with st.sidebar:
-    st.header("Impostazioni")
-    target = st.number_input("Scegli il muretto del...", min_value=2, max_value=10, value=6)
+    st.header("⚙️ Impostazioni")
+    target = st.number_input("Muretto del numero:", min_value=2, max_value=10, value=6)
     st.write("---")
-    st.write("Questo gioco aiuta i bambini a trovare le coppie amiche dei numeri.")
+    st.info("I bambini devono indovinare quanti mattoncini mancano per completare il muretto.")
 
-# 4. Inizializzazione della sessione di gioco
+# 4. Inizializzazione della sessione
 if 'parte_nota' not in st.session_state or st.session_state.get('current_target') != target:
     st.session_state.parte_nota = random.randint(0, target)
     st.session_state.current_target = target
-    st.session_state.indovinato = False
+    st.session_state.messaggio_errore = False
 
-# 5. Area di gioco centrale
+# 5. Logica di gioco
 mancanti_reali = target - st.session_state.parte_nota
 
-st.markdown(f'<p class="info-testo">Siamo nel muretto del <b>{target}</b></p>', unsafe_allow_html=True)
-st.markdown(f'<p class="info-testo">Abbiamo già messo <b>{st.session_state.parte_nota}</b> mattoncini blu:</p>', unsafe_allow_html=True)
+st.markdown(f'<p class="info-testo">Siamo nel muretto del <span class="evidenza">{target}</span></p>', unsafe_allow_html=True)
+st.markdown(f'<p class="info-testo">Abbiamo <span class="evidenza">{st.session_state.parte_nota}</span> mattoncini blu:</p>', unsafe_allow_html=True)
 
-# Visualizzazione grafica dei mattoncini esistenti
+# Visualizzazione dei mattoncini attuali
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-st.markdown('<p class="info-testo">Quanti mattoncini arancioni 🟧 mancano per finire?</p>', unsafe_allow_html=True)
+st.markdown('<p class="info-testo">Quanti ne mancano per arrivare a <b>' + str(target) + '</b>?</p>', unsafe_allow_html=True)
 
-# 6. Bottoni per la risposta (Pulsantiera gigante)
-col_bottone = st.columns(target + 1)
+# 6. Pulsantiera numerica per rispondere
+cols = st.columns(target + 1)
 scelta = None
-
 for i in range(target + 1):
-    if col_bottone[i].button(str(i)):
+    if cols[i].button(str(i), key=f"btn_{i}"):
         scelta = i
 
-# 7. Verifica della risposta
+# 7. Gestione Risposta
 if scelta is not None:
     if scelta == mancanti_reali:
-        st.session_state.indovinato = True
-    else:
-        st.error(f"Oh no! Se aggiungi {scelta}, non arrivi a {target}. Riprova!")
-        st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * scelta}</p>', unsafe_allow_html=True)
-
-# 8. Messaggio di vittoria e reset
-if st.session_state.indovinato:
-    st.balloons()
-    st.success(f"BRAVISSIMO! {st.session_state.parte_nota} + {mancanti_reali} fa proprio {target}!")
-    st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"🟧" * mancanti_reali}</p>', unsafe_allow_html=True)
-    
-    if st.button("Fai un altro muretto! ➡️"):
+        # RISPOSTA CORRETTA
+        st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"🟧" * scelta}</p>', unsafe_allow_html=True)
+        st.balloons()
+        st.success(f"BRAVISSIMO! {st.session_state.parte_nota} + {scelta} = {target}")
+        
+        # Breve pausa per far vedere il risultato e poi reset automatico
+        time.sleep(2) 
         st.session_state.parte_nota = random.randint(0, target)
-        st.session_state.indovinato = False
+        st.session_state.messaggio_errore = False
         st.rerun()
+    else:
+        # RISPOSTA ERRATA
+        st.session_state.messaggio_errore = True
+        st.session_state.ultima_scelta_errata = scelta
 
-# 9. Riepilogo visivo (I muretti amici)
-with st.expander("Vedi tutti i muretti del " + str(target)):
+if st.session_state.messaggio_errore:
+    st.error(f"Riprova! Se ne aggiungi {st.session_state.ultima_scelta_errata} non arrivi a {target}.")
+    # Mostra visivamente perché è sbagliato (troppo corto o troppo lungo)
+    st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * st.session_state.ultima_scelta_errata}</p>', unsafe_allow_html=True)
+
+# 8. Tabella di aiuto (opzionale)
+with st.expander("Aiuto: guarda tutte le coppie del " + str(target)):
     for i in range(target + 1):
-        st.write(f"{i} + {target-i} = {target} | {'🟦'*i}{'🟧'*(target-i)}")
+        st.write(f"{i} + {target-i} = {target}")
