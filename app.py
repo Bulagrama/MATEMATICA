@@ -1,63 +1,73 @@
 import streamlit as st
 import random
 
-# Configurazione stile "scuola"
-st.set_page_config(page_title="Il Gioco dei Muretti", page_icon="🧱", layout="wide")
+# 1. Configurazione della pagina
+st.set_page_config(page_title="Il Gioco dei Muretti", page_icon="🧱", layout="centered")
 
-# CSS personalizzato per rendere i caratteri più grandi
+# 2. Stile CSS per rendere tutto grande e leggibile
 st.markdown("""
     <style>
-    .big-font { font-size:30px !important; font-weight: bold; }
-    .mattoncino { font-size:40px; }
+    .titolo { font-size: 50px !important; text-align: center; color: #FF4B4B; font-weight: bold; }
+    .stButton>button { font-size: 30px !important; width: 100%; height: 60px; border-radius: 10px; }
+    .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 5px; }
+    .info-testo { font-size: 25px; text-align: center; }
     </style>
-    """, unsafe_allow_complete=True)
+    """, unsafe_allow_html=True)
 
-st.title("🧱 Il Gioco dei Muretti")
-st.write("### Aiuta i muratori a completare il muretto del numero!")
+st.markdown('<p class="titolo">🧱 Il Gioco dei Muretti</p>', unsafe_allow_html=True)
 
-# Scelta del numero obiettivo nella sidebar (o in alto)
-target = st.number_input("Su quale numero lavoriamo oggi?", min_value=2, max_value=10, value=6)
-
-st.divider()
-
-# Inizializzazione della sessione per mantenere la domanda
-if 'parte_nota' not in st.session_state or st.session_state.get('last_target') != target:
-    st.session_state.parte_nota = random.randint(0, target)
-    st.session_state.last_target = target
-    st.session_state.risposta_corretta = False
-
-# Layout a due colonne per l'esercizio centrale
-col1, col2 = st.columns([1, 1])
-
-with col1:
-    st.subheader("La Sfida:")
-    st.markdown(f"<p class='big-font'>Il muretto è alto {target}</p>", unsafe_allow_complete=True)
-    st.markdown(f"Abbiamo già messo <span style='color:blue; font-size:40px;'>{st.session_state.parte_nota}</span> mattoncini.", unsafe_allow_complete=True)
-    
-    # Visualizzazione grafica dei mattoncini presenti
-    st.markdown("🟦 " * st.session_state.parte_nota)
-    
+# 3. Impostazioni del gioco nella sidebar
+with st.sidebar:
+    st.header("Impostazioni")
+    target = st.number_input("Scegli il muretto del...", min_value=2, max_value=10, value=6)
     st.write("---")
-    risposta = st.number_input("Quanti ne mancano per arrivare in cima?", min_value=0, max_value=target, step=1, key="input_bimbo")
+    st.write("Questo gioco aiuta i bambini a trovare le coppie amiche dei numeri.")
 
-with col2:
-    st.subheader("Il tuo Muretto:")
-    # Visualizzazione del muretto che si compone
-    mancanti = target - st.session_state.parte_nota
-    
-    if risposta == mancanti:
-        st.success("BRAVISSIMO! 🎉")
-        st.markdown(f"<p class='mattoncino'>{'🟦' * st.session_state.parte_nota}{'🟧' * risposta}</p>", unsafe_allow_complete=True)
-        st.write(f"### {st.session_state.parte_nota} + {risposta} = {target}")
-        if st.button("Prossimo Muretto ➡️"):
-            st.session_state.parte_nota = random.randint(0, target)
-            st.rerun()
-    elif risposta != 0:
-        st.warning("Ancora un piccolo sforzo... prova a contare!")
-        # Mostra i mattoncini attuali + quelli inseriti dall'utente (se sbagliati)
-        st.markdown(f"<p class='mattoncino'>{'🟦' * st.session_state.parte_nota}{'⬜' * risposta}</p>", unsafe_allow_complete=True)
+# 4. Inizializzazione della sessione di gioco
+if 'parte_nota' not in st.session_state or st.session_state.get('current_target') != target:
+    st.session_state.parte_nota = random.randint(0, target)
+    st.session_state.current_target = target
+    st.session_state.indovinato = False
 
-# Footer con i muretti già scoperti
-st.sidebar.header("I muretti amici")
+# 5. Area di gioco centrale
+mancanti_reali = target - st.session_state.parte_nota
+
+st.markdown(f'<p class="info-testo">Siamo nel muretto del <b>{target}</b></p>', unsafe_allow_html=True)
+st.markdown(f'<p class="info-testo">Abbiamo già messo <b>{st.session_state.parte_nota}</b> mattoncini blu:</p>', unsafe_allow_html=True)
+
+# Visualizzazione grafica dei mattoncini esistenti
+st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
+
+st.markdown('<p class="info-testo">Quanti mattoncini arancioni 🟧 mancano per finire?</p>', unsafe_allow_html=True)
+
+# 6. Bottoni per la risposta (Pulsantiera gigante)
+col_bottone = st.columns(target + 1)
+scelta = None
+
 for i in range(target + 1):
-    st.sidebar.text(f"{i} + {target-i} = {target}")
+    if col_bottone[i].button(str(i)):
+        scelta = i
+
+# 7. Verifica della risposta
+if scelta is not None:
+    if scelta == mancanti_reali:
+        st.session_state.indovinato = True
+    else:
+        st.error(f"Oh no! Se aggiungi {scelta}, non arrivi a {target}. Riprova!")
+        st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * scelta}</p>', unsafe_allow_html=True)
+
+# 8. Messaggio di vittoria e reset
+if st.session_state.indovinato:
+    st.balloons()
+    st.success(f"BRAVISSIMO! {st.session_state.parte_nota} + {mancanti_reali} fa proprio {target}!")
+    st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"🟧" * mancanti_reali}</p>', unsafe_allow_html=True)
+    
+    if st.button("Fai un altro muretto! ➡️"):
+        st.session_state.parte_nota = random.randint(0, target)
+        st.session_state.indovinato = False
+        st.rerun()
+
+# 9. Riepilogo visivo (I muretti amici)
+with st.expander("Vedi tutti i muretti del " + str(target)):
+    for i in range(target + 1):
+        st.write(f"{i} + {target-i} = {target} | {'🟦'*i}{'🟧'*(target-i)}")
