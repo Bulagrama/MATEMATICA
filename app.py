@@ -5,7 +5,7 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS MIRATO (Correzione etichetta e stile)
+# 2. CSS MIRATO (Tastiera e Stile)
 st.markdown("""
     <style>
     /* Titoli e testi */
@@ -57,7 +57,7 @@ st.markdown("""
         margin: 0 !important;
     }
 
-    /* EFFETTO SELEZIONE (Quando il bambino tocca il numero) */
+    /* EFFETTO SELEZIONE */
     [data-testid="stMain"] div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         background-color: #1f77b4 !important;
         box-shadow: none !important;
@@ -95,14 +95,12 @@ st.markdown(f'''
     </div>
 ''', unsafe_allow_html=True)
 
-
-
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. TASTIERA (Etichetta nascosta da CSS)
+# 6. TASTIERA
 opzioni = [str(i) for i in range(1, target)]
 scelta_radio = st.radio(
-    "TastieraNumerica", # Questa etichetta ora è invisibile
+    "TastieraNumerica", 
     options=opzioni, 
     index=None, 
     key=f"tastiera_{st.session_state.domanda_id}"
@@ -126,5 +124,12 @@ if scelta_radio:
         st.session_state.domanda_id += 1
         st.rerun()
     else:
-        st.error(f"Riprova! {st.session_state.parte_nota} e {scelta} non fanno {target}")
+        st.error(f"Riprova!")
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * scelta}</p>', unsafe_allow_html=True)
+
+# 8. IL SUGGERIMENTO (REINSERITO)
+st.markdown("---")
+with st.expander("💡 Hai bisogno di un aiuto? Guarda gli amici del " + str(target)):
+    st.write(f"Ecco come puoi formare il numero **{target}**:")
+    for i in range(1, target):
+        st.write(f"🧱 **{i}** e **{target-i}**")
