@@ -5,7 +5,7 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS MIRATO (Solo per la tastiera del gioco)
+# 2. CSS MIRATO (Correzione etichetta e stile)
 st.markdown("""
     <style>
     /* Titoli e testi */
@@ -16,16 +16,21 @@ st.markdown("""
     .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
     .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
 
-    /* TRUCCO PER LA TASTIERA: Colpiamo solo il radio button nel corpo centrale */
+    /* NASCONDE L'ETICHETTA "TASTIERA" */
+    [data-testid="stMain"] div[data-testid="stRadio"] label[data-testid="stWidgetLabel"] {
+        display: none !important;
+    }
+
+    /* TASTIERA: Layout orizzontale e staccato */
     [data-testid="stMain"] div[data-testid="stRadio"] > div {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
         justify-content: center !important;
-        gap: 20px !important; /* SPAZIO TRA I TASTI */
+        gap: 15px !important;
     }
 
-    /* TRASFORMAZIONE LABEL IN MATTONCINI GIGANTI */
+    /* MATTONCINI GIGANTI */
     [data-testid="stMain"] div[data-testid="stRadio"] label {
         background-color: white !important;
         border: 4px solid #1f77b4 !important;
@@ -39,11 +44,12 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    /* MOSTRA SOLO IL NUMERO E NASCONDE IL PALLINO */
+    /* NASCONDE IL PALLINO DEL RADIO */
     [data-testid="stMain"] div[data-testid="stRadio"] label div[dir] {
-        display: none !important; /* Nasconde il cerchietto */
+        display: none !important;
     }
     
+    /* NUMERO DENTRO IL TASTO */
     [data-testid="stMain"] div[data-testid="stRadio"] label div[data-testid="stMarkdownContainer"] p {
         font-size: 45px !important;
         font-weight: bold !important;
@@ -51,9 +57,11 @@ st.markdown("""
         margin: 0 !important;
     }
 
-    /* Stile quando selezionato */
+    /* EFFETTO SELEZIONE (Quando il bambino tocca il numero) */
     [data-testid="stMain"] div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         background-color: #1f77b4 !important;
+        box-shadow: none !important;
+        transform: translateY(4px) !important;
     }
     [data-testid="stMain"] div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p {
         color: white !important;
@@ -61,7 +69,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Sidebar (Ora protetta, non verrà colpita dal CSS)
+# 3. Sidebar
 with st.sidebar:
     st.header("⚙️ Impostazioni")
     target = st.number_input("Muretto del:", min_value=2, max_value=10, value=6)
@@ -91,14 +99,13 @@ st.markdown(f'''
 
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. TASTIERA A MATTONCINI
+# 6. TASTIERA (Etichetta nascosta da CSS)
 opzioni = [str(i) for i in range(1, target)]
 scelta_radio = st.radio(
-    "Tastiera", 
+    "TastieraNumerica", # Questa etichetta ora è invisibile
     options=opzioni, 
     index=None, 
-    key=f"tastiera_{st.session_state.domanda_id}",
-    label_visibility="collapsed"
+    key=f"tastiera_{st.session_state.domanda_id}"
 )
 
 # 7. Risposta
