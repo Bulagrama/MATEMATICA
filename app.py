@@ -5,9 +5,10 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS "MATTONCINI STACCATI"
+# 2. CSS MIRATO (Solo per la tastiera del gioco)
 st.markdown("""
     <style>
+    /* Titoli e testi */
     .header-muretto { 
         background-color: #FF4B4B; color: white; padding: 15px; 
         border-radius: 15px; text-align: center; font-size: 30px !important; font-weight: bold;
@@ -15,52 +16,56 @@ st.markdown("""
     .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
     .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
 
-    /* TRUCCO DEFINITIVO: Trasformiamo i Radio Buttons in Mattoncini Giganti e Staccati */
-    div[data-testid="stWidgetLabel"] { display: none; } /* Nasconde la scritta "Scegli" */
-    
-    div[data-testid="stRadio"] > div {
+    /* TRUCCO PER LA TASTIERA: Colpiamo solo il radio button nel corpo centrale */
+    [data-testid="stMain"] div[data-testid="stRadio"] > div {
         display: flex !important;
         flex-direction: row !important;
         flex-wrap: wrap !important;
         justify-content: center !important;
-        gap: 15px !important; /* SPAZIO TRA I BOTTONI */
+        gap: 20px !important; /* SPAZIO TRA I TASTI */
     }
 
-    div[data-testid="stRadio"] label {
+    /* TRASFORMAZIONE LABEL IN MATTONCINI GIGANTI */
+    [data-testid="stMain"] div[data-testid="stRadio"] label {
         background-color: white !important;
         border: 4px solid #1f77b4 !important;
         border-radius: 15px !important;
-        width: 90px !important;  /* LARGHEZZA TASTO */
-        height: 90px !important; /* ALTEZZA TASTO */
+        width: 100px !important;
+        height: 100px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        cursor: pointer !important;
-        box-shadow: 0px 5px 0px #1a5e8f !important; /* EFFETTO 3D */
+        box-shadow: 0px 5px 0px #1a5e8f !important;
+        padding: 0 !important;
     }
 
-    /* Nasconde il cerchietto del radio button */
-    div[data-testid="stRadio"] label div[data-testid="stMarkdownContainer"] p {
-        font-size: 40px !important;
-        font-weight: bold !important;
-        color: #1f77b4 !important;
+    /* MOSTRA SOLO IL NUMERO E NASCONDE IL PALLINO */
+    [data-testid="stMain"] div[data-testid="stRadio"] label div[dir] {
+        display: none !important; /* Nasconde il cerchietto */
     }
     
-    /* Nasconde l'input circolare nativo */
-    div[data-testid="stRadio"] input { display: none; }
+    [data-testid="stMain"] div[data-testid="stRadio"] label div[data-testid="stMarkdownContainer"] p {
+        font-size: 45px !important;
+        font-weight: bold !important;
+        color: #1f77b4 !important;
+        margin: 0 !important;
+    }
 
     /* Stile quando selezionato */
-    div[data-testid="stRadio"] label[data-baseweb="radio"] {
+    [data-testid="stMain"] div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) {
         background-color: #1f77b4 !important;
+    }
+    [data-testid="stMain"] div[data-testid="stRadio"] label[data-baseweb="radio"]:has(input:checked) p {
+        color: white !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Sidebar
+# 3. Sidebar (Ora protetta, non verrà colpita dal CSS)
 with st.sidebar:
     st.header("⚙️ Impostazioni")
     target = st.number_input("Muretto del:", min_value=2, max_value=10, value=6)
-    metodo = st.radio("Metodo:", ["Casuale", "Ordinato"])
+    metodo = st.radio("Metodo di gioco:", ["Casuale", "Ordinato"])
 
 # 4. Inizializzazione Sessione
 if 'domanda_id' not in st.session_state: st.session_state.domanda_id = 0
@@ -74,20 +79,26 @@ mancanti_reali = target - st.session_state.parte_nota
 
 # 5. UI Principale
 st.markdown(f'<div class="header-muretto">IL MURETTO DEL {target}</div>', unsafe_allow_html=True)
-st.markdown(f'<div class="operazione"><span style="color: blue;">{st.session_state.parte_nota}</span> <span style="font-size: 35px; color: #666;">e</span> <span style="color: #ff7f0e;">?</span></div>', unsafe_allow_html=True)
+st.markdown(f'''
+    <div class="operazione">
+        <span style="color: blue;">{st.session_state.parte_nota}</span> 
+        <span style="font-size: 35px; color: #666;">e</span> 
+        <span style="color: #ff7f0e;">?</span>
+    </div>
+''', unsafe_allow_html=True)
 
 
 
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. TASTIERA A MATTONCINI STACCATI
+# 6. TASTIERA A MATTONCINI
 opzioni = [str(i) for i in range(1, target)]
 scelta_radio = st.radio(
-    "Scegli", 
+    "Tastiera", 
     options=opzioni, 
     index=None, 
-    key=f"radio_{st.session_state.domanda_id}",
-    horizontal=True
+    key=f"tastiera_{st.session_state.domanda_id}",
+    label_visibility="collapsed"
 )
 
 # 7. Risposta
