@@ -5,7 +5,7 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Sfida dei Muretti", page_icon="🏆", layout="centered")
 
-# 2. CSS MIRATO (Inclusi i nuovi stili per i punti e la selezione)
+# 2. CSS MIRATO
 st.markdown("""
     <style>
     .header-muretto { 
@@ -15,7 +15,10 @@ st.markdown("""
     .punti-box {
         background-color: #ffffff; border-radius: 15px; padding: 10px;
         text-align: center; font-size: 28px; font-weight: bold; color: #FFA500; 
-        border: 3px solid #FFA500; margin-bottom: 15px;
+        border: 3px solid #FFA500; margin-bottom: 5px;
+    }
+    .grado-testo {
+        text-align: center; font-size: 18px; color: #555; font-style: italic; margin-bottom: 15px;
     }
     .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
     .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
@@ -39,30 +42,41 @@ with st.sidebar:
         options=list(range(2, 11)),
         default=[6]
     )
-    
     tipo_gioco = st.radio("Tipo di sfida:", ["Muretto Fisso", "Muretto a Sorpresa (Misto)"])
-    st.info("Nella modalità 'Sorpresa', il muretto cambia a ogni domanda tra quelli scelti!")
+    if st.button("Azzera Punti"):
+        st.session_state.punti = 0
+        st.rerun()
 
-# 4. Inizializzazione Session State
+# 4. Inizializzazione Session State (VERSIONE CORRETTA)
 if 'punti' not in st.session_state: st.session_state.punti = 0
 if 'domanda_id' not in st.session_state: st.session_state.domanda_id = 0
-if 'target_corrente' not in st.session_state: st.session_state.target_corrente = numeri_scelti[0] if numeri_scelti else 6
+if 'nuova_domanda' not in st.session_state: st.session_state.nuova_domanda = True
+if 'target_corrente' not in st.session_state: 
+    st.session_state.target_corrente = numeri_scelti[0] if numeri_scelti else 6
 
-# Controllo se l'utente ha svuotato la selezione
+# Controllo sicurezza per selezione vuota
 if not numeri_scelti:
-    st.warning("Seleziona almeno un numero nella barra laterale!")
+    st.warning("👈 Seleziona almeno un numero nel menu a sinistra!")
     st.stop()
 
-# 5. Logica Cambio Muretto (Challenge o Misto)
-if 'parte_nota' not in st.session_state or st.session_state.nuova_domanda:
+# 5. Logica Gradi
+def ottieni_grado(p):
+    if p < 5: return "Novizio dei Muretti 🌱"
+    if p < 15: return "Apprendista Muratore 🧱"
+    if p < 30: return "Esperto di Numeri ⭐"
+    if p < 50: return "Maestro dei Muretti 👑"
+    return "Leggenda della Matematica 🏆"
+
+# 6. Generazione Domanda
+if st.session_state.nuova_domanda:
     if tipo_gioco == "Muretto a Sorpresa (Misto)":
         st.session_state.target_corrente = random.choice(numeri_scelti)
-    
-    # Se ha fatto 10 punti in modalità fissa, passa al numero successivo
-    if st.session_state.punti > 0 and st.session_state.punti % 10 == 0 and tipo_gioco == "Muretto Fisso":
-        idx = (numeri_scelti.index(st.session_state.target_corrente) + 1) % len(numeri_scelti)
-        st.session_state.target_corrente = numeri_scelti[idx]
-        st.toast(f"LIVELLO SUPERATO! Passiamo al muretto del {st.session_state.target_corrente}", icon="🚀")
+    elif st.session_state.punti > 0 and st.session_state.punti % 10 == 0:
+        # Passa al prossimo numero della lista ogni 10 punti
+        attuale = st.session_state.target_corrente
+        if attuale in numeri_scelti:
+            idx = (numeri_scelti.index(attuale) + 1) % len(numeri_scelti)
+            st.session_state.target_corrente = numeri_scelti[idx]
 
     st.session_state.parte_nota = random.randint(1, st.session_state.target_corrente - 1)
     st.session_state.nuova_domanda = False
@@ -70,8 +84,9 @@ if 'parte_nota' not in st.session_state or st.session_state.nuova_domanda:
 target = st.session_state.target_corrente
 mancanti_reali = target - st.session_state.parte_nota
 
-# 6. UI Principale
+# 7. UI Principale
 st.markdown(f'<div class="punti-box">⭐ Punti: {st.session_state.punti} ⭐</div>', unsafe_allow_html=True)
+st.markdown(f'<div class="grado-testo">{ottieni_grado(st.session_state.punti)}</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="header-muretto">MURETTO DEL {target}</div>', unsafe_allow_html=True)
 
 st.markdown(f'''
@@ -82,31 +97,31 @@ st.markdown(f'''
     </div>
 ''', unsafe_allow_html=True)
 
+
+
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 7. TASTIERA
+# 8. TASTIERA
 opzioni = [str(i) for i in range(1, target)]
 scelta_radio = st.radio("Keypad", options=opzioni, index=None, key=f"k_{st.session_state.domanda_id}")
 
-# 8. Gestione Risposta
+# 9. Gestione Risposta
 if scelta_radio:
     scelta = int(scelta_radio)
     if scelta == mancanti_reali:
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"🟧" * scelta}</p>', unsafe_allow_html=True)
         st.session_state.punti += 1
         st.balloons()
-        st.success(f"GRANDE! Hai guadagnato un punto!")
+        st.success(f"CORRETTO!")
         time.sleep(2)
         st.session_state.domanda_id += 1
         st.session_state.nuova_domanda = True
         st.rerun()
     else:
-        st.error(f"Riprova! {st.session_state.parte_nota} e {scelta} non fanno {target}")
+        st.error(f"Sbagliato! {st.session_state.parte_nota} e {scelta} non fanno {target}")
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * scelta}</p>', unsafe_allow_html=True)
-        # Opzionale: azzerare i punti se sbaglia
-        # st.session_state.punti = 0
 
-# 9. AIUTO
+# 10. AIUTO
 st.markdown("---")
 with st.expander("💡 Guarda gli amici del " + str(target)):
     for i in range(1, target):
