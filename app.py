@@ -5,16 +5,21 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS MIRATO (Tastiera e Stile)
+# 2. CSS MIRATO
 st.markdown("""
     <style>
-    /* Titoli e testi */
     .header-muretto { 
         background-color: #FF4B4B; color: white; padding: 15px; 
         border-radius: 15px; text-align: center; font-size: 30px !important; font-weight: bold;
     }
     .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
     .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
+
+    /* Rende il selettore del numero più grande e centrato */
+    div[data-testid="stNumberInput"] {
+        width: 200px;
+        margin: 0 auto;
+    }
 
     /* NASCONDE L'ETICHETTA "TASTIERA" */
     [data-testid="stMain"] div[data-testid="stRadio"] label[data-testid="stWidgetLabel"] {
@@ -44,12 +49,10 @@ st.markdown("""
         padding: 0 !important;
     }
 
-    /* NASCONDE IL PALLINO DEL RADIO */
     [data-testid="stMain"] div[data-testid="stRadio"] label div[dir] {
         display: none !important;
     }
     
-    /* NUMERO DENTRO IL TASTO */
     [data-testid="stMain"] div[data-testid="stRadio"] label div[data-testid="stMarkdownContainer"] p {
         font-size: 45px !important;
         font-weight: bold !important;
@@ -69,13 +72,16 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# 3. Sidebar
+# 3. Sidebar (Solo per il metodo)
 with st.sidebar:
-    st.header("⚙️ Impostazioni")
-    target = st.number_input("Muretto del:", min_value=2, max_value=10, value=6)
+    st.header("⚙️ Modalità")
     metodo = st.radio("Metodo di gioco:", ["Casuale", "Ordinato"])
 
-# 4. Inizializzazione Sessione
+# 4. Scelta del Muretto in pagina principale
+st.markdown('<p style="text-align: center; font-size: 20px; margin-bottom: 0;">Scegli il muretto da studiare:</p>', unsafe_allow_html=True)
+target = st.number_input("Target", min_value=2, max_value=10, value=6, label_visibility="collapsed")
+
+# 5. Inizializzazione Sessione
 if 'domanda_id' not in st.session_state: st.session_state.domanda_id = 0
 if 'current_target' not in st.session_state or st.session_state.current_target != target:
     st.session_state.current_target = target
@@ -85,7 +91,7 @@ if 'current_target' not in st.session_state or st.session_state.current_target !
 
 mancanti_reali = target - st.session_state.parte_nota
 
-# 5. UI Principale
+# 6. UI Principale
 st.markdown(f'<div class="header-muretto">IL MURETTO DEL {target}</div>', unsafe_allow_html=True)
 st.markdown(f'''
     <div class="operazione">
@@ -97,7 +103,7 @@ st.markdown(f'''
 
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. TASTIERA
+# 7. TASTIERA
 opzioni = [str(i) for i in range(1, target)]
 scelta_radio = st.radio(
     "TastieraNumerica", 
@@ -106,7 +112,7 @@ scelta_radio = st.radio(
     key=f"tastiera_{st.session_state.domanda_id}"
 )
 
-# 7. Risposta
+# 8. Risposta
 if scelta_radio:
     scelta = int(scelta_radio)
     if scelta == mancanti_reali:
@@ -127,9 +133,8 @@ if scelta_radio:
         st.error(f"Riprova!")
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * scelta}</p>', unsafe_allow_html=True)
 
-# 8. IL SUGGERIMENTO (REINSERITO)
+# 9. AIUTO
 st.markdown("---")
 with st.expander("💡 Hai bisogno di un aiuto? Guarda gli amici del " + str(target)):
-    st.write(f"Ecco come puoi formare il numero **{target}**:")
     for i in range(1, target):
         st.write(f"🧱 **{i}** e **{target-i}**")
