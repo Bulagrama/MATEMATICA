@@ -1,20 +1,52 @@
 import streamlit as st
 import random
 import time
-import streamlit.components.v1 as components
 
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS per l'interfaccia generale
+# 2. CSS "GIGANTE" - Questo forza i bottoni a essere enormi e stare vicini
 st.markdown("""
     <style>
+    /* Titoli */
     .header-muretto { 
         background-color: #FF4B4B; color: white; padding: 15px; 
         border-radius: 15px; text-align: center; font-size: 30px !important; font-weight: bold;
     }
-    .operazione { font-size: 60px; text-align: center; font-weight: bold; margin: 15px 0; }
-    .mattoncino-testo { font-size: 65px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 10px; }
+    .operazione { font-size: 55px; text-align: center; font-weight: bold; margin: 15px 0; }
+    .mattoncino-testo { font-size: 60px; text-align: center; letter-spacing: 8px; line-height: 1; margin-bottom: 20px; }
+
+    /* FORZA IL LAYOUT ORIZZONTALE DEI BOTTONI */
+    [data-testid="stHorizontalBlock"] {
+        display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
+        justify-content: center !important;
+        gap: 10px !important;
+    }
+
+    [data-testid="column"] {
+        flex: 0 1 auto !important;
+        min-width: 85px !important; /* Larghezza minima per farli stare vicini */
+    }
+
+    /* BOTTONI GIGANTI */
+    .stButton > button {
+        width: 85px !important;
+        height: 85px !important;
+        font-size: 35px !important;
+        font-weight: bold !important;
+        border-radius: 15px !important;
+        background-color: white !important;
+        border: 4px solid #1f77b4 !important;
+        color: #1f77b4 !important;
+        box-shadow: 0px 5px 0px #1a5e8f !important;
+    }
+    
+    .stButton > button:active {
+        box-shadow: 0px 1px 0px #1a5e8f !important;
+        transform: translateY(4px);
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -25,91 +57,48 @@ with st.sidebar:
     metodo = st.radio("Metodo:", ["Casuale", "Ordinato"])
 
 # 4. Inizializzazione Sessione
+if 'domanda_id' not in st.session_state:
+    st.session_state.domanda_id = 0
 if 'current_target' not in st.session_state or st.session_state.current_target != target:
     st.session_state.current_target = target
     st.session_state.ordine_attuale = 1
     st.session_state.parte_nota = 1 if metodo == "Ordinato" else random.randint(1, target - 1)
-
-if 'ultimo_metodo' not in st.session_state or st.session_state.ultimo_metodo != metodo:
-    st.session_state.ultimo_metodo = metodo
-    st.session_state.ordine_attuale = 1
-    st.session_state.parte_nota = 1 if metodo == "Ordinato" else random.randint(1, target - 1)
+    st.session_state.domanda_id += 1
 
 mancanti_reali = target - st.session_state.parte_nota
 
-# 5. UI PRINCIPALE
+# 5. Interfaccia
 st.markdown(f'<div class="header-muretto">IL MURETTO DEL {target}</div>', unsafe_allow_html=True)
 st.markdown(f'<div class="operazione"><span style="color: blue;">{st.session_state.parte_nota}</span> <span style="font-size: 35px; color: #666;">e</span> <span style="color: #ff7f0e;">?</span></div>', unsafe_allow_html=True)
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 
-# 6. TASTIERA HTML GIGANTE (Indipendente da Streamlit)
-# Creiamo il codice HTML per i bottoni
-bottoni_html = ""
+# 6. TASTIERA GIGANTE ORIZZONTALE
+# Creiamo le colonne dinamicamente. Su mobile non andranno in colonna grazie al CSS sopra.
+cols = st.columns(target - 1)
+scelta = None
+
 for i in range(1, target):
-    bottoni_html += f'<button class="btn-box" onclick="sendValue({i})">{i}</button>'
+    with cols[i-1]:
+        if st.button(str(i), key=f"btn_{i}_{st.session_state.domanda_id}"):
+            scelta = i
 
-# Il componente HTML con Javascript per rimandare il valore a Python
-html_component = f"""
-<div id="container" class="container">
-    {bottoni_html}
-</div>
-
-<style>
-    .container {{
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 20px;
-        padding: 20px;
-        font-family: sans-serif;
-    }}
-    .btn-box {{
-        width: 120px;
-        height: 120px;
-        font-size: 55px;
-        font-weight: bold;
-        color: #1f77b4;
-        background-color: white;
-        border: 5px solid #1f77b4;
-        border-radius: 20px;
-        box-shadow: 0px 8px 0px #1a5e8f;
-        cursor: pointer;
-        transition: 0.1s;
-    }}
-    .btn-box:active {{
-        box-shadow: 0px 2px 0px #1a5e8f;
-        transform: translateY(6px);
-    }}
-</style>
-
-<script>
-    function sendValue(val) {{
-        window.parent.postMessage({{
-            type: 'streamlit:set_component_value',
-            value: val
-        }}, '*');
-    }}
-</script>
-"""
-
-# Visualizziamo i bottoni. L'altezza è fissa a 400 per assicurarci che si veda tutto su due righe
-scelta = components.html(html_component, height=400)
-
-# 7. LOGICA DI RISPOSTA
+# 7. Logica Risposta
 if scelta is not None:
     if scelta == mancanti_reali:
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"🟧" * scelta}</p>', unsafe_allow_html=True)
         st.balloons()
         st.success(f"BRAVO! {st.session_state.parte_nota} e {scelta} fanno {target}")
         
-        time.sleep(2.5)
-        # Aggiorna per la prossima domanda
+        time.sleep(2)
+        
         if metodo == "Casuale":
             st.session_state.parte_nota = random.randint(1, target - 1)
         else:
             st.session_state.ordine_attuale = (st.session_state.ordine_attuale % (target - 1)) + 1
             st.session_state.parte_nota = st.session_state.ordine_attuale
+            
+        st.session_state.domanda_id += 1
         st.rerun()
     else:
-        st.error(f"Riprova! {st.session_state.parte_nota} e {scelta} non fanno {target}")
+        st.error(f"Riprova!")
         st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * scelta}</p>', unsafe_allow_html=True)
