@@ -5,46 +5,53 @@ import time
 # 1. Configurazione della pagina
 st.set_page_config(page_title="Il Gioco dei Muretti", page_icon="🧱", layout="centered")
 
-# 2. CSS Avanzato per Mobile e Griglia Bottoni
+# 2. CSS "FORZATO" per la Griglia Mobile
 st.markdown("""
     <style>
-    .titolo { font-size: 35px !important; text-align: center; color: #FF4B4B; font-weight: bold; }
-    
-    /* Forza i bottoni a stare in griglia anche su cellulare */
-    [data-testid="column"] {
-        display: inline-block !important;
-        width: 18% !important; /* Circa 5 bottoni per riga */
-        min-width: 60px !important;
-        margin: 5px !important;
-    }
-    
-    .stButton>button { 
-        font-size: 25px !important; 
-        width: 100% !important; 
-        height: 60px !important; 
-        border-radius: 10px !important;
-        background-color: #f0f2f6 !important;
-        border: 2px solid #d1d1d1 !important;
+    /* Titolo e testi */
+    .titolo { font-size: 32px !important; text-align: center; color: #FF4B4B; font-weight: bold; }
+    .info-testo { font-size: 20px; text-align: center; margin: 10px 0; }
+    .evidenza { color: #1f77b4; font-weight: bold; font-size: 26px; }
+    .mattoncino-testo { font-size: 45px; text-align: center; letter-spacing: 2px; line-height: 1.2; margin: 15px 0; }
+
+    /* CONTENITORE GRIGLIA: Forza i bottoni a stare vicini */
+    .grid-container {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        padding: 10px;
     }
 
-    .mattoncino-testo { font-size: 50px; text-align: center; letter-spacing: 3px; line-height: 1.1; }
-    .info-testo { font-size: 22px; text-align: center; margin-top: 10px; }
-    .evidenza { color: #1f77b4; font-weight: bold; font-size: 28px; }
+    /* Stile specifico per i bottoni dentro la griglia */
+    div.stButton > button {
+        width: 65px !important;
+        height: 65px !important;
+        font-size: 24px !important;
+        font-weight: bold !important;
+        border-radius: 12px !important;
+        background-color: #f8f9fa !important;
+        border: 2px solid #1f77b4 !important;
+        color: #1f77b4 !important;
+    }
     
-    /* Nasconde i margini inutili su mobile */
-    .main .block-container { padding: 1rem !important; }
+    /* Rimuove i margini automatici di Streamlit che creano le colonne */
+    [data-testid="column"] {
+        flex: 0 1 auto !important;
+        min-width: 0px !important;
+        width: auto !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 st.markdown('<p class="titolo">🧱 Gioco dei Muretti</p>', unsafe_allow_html=True)
 
-# 3. Impostazioni nella sidebar
+# 3. Sidebar
 with st.sidebar:
     st.header("⚙️ Impostazioni")
-    target = st.number_input("Muretto del numero:", min_value=2, max_value=10, value=6)
+    target = st.number_input("Muretto del:", min_value=2, max_value=10, value=6)
     metodo = st.radio("Metodo:", ["Casuale", "Ordinato"])
-    st.write("---")
-    if st.button("🔄 Ricomincia"):
+    if st.button("🔄 Reset"):
         st.session_state.ordine_attuale = 1
         st.rerun()
 
@@ -61,25 +68,25 @@ if 'ultimo_metodo' not in st.session_state or st.session_state.ultimo_metodo != 
     st.session_state.ordine_attuale = 1
     st.session_state.parte_nota = 1 if metodo == "Ordinato" else random.randint(1, target - 1)
 
-# 5. Logica e Visualizzazione
+# 5. Logica e Grafica
 mancanti_reali = target - st.session_state.parte_nota
 
 st.markdown(f'<p class="info-testo">Muretto del <span class="evidenza">{target}</span></p>', unsafe_allow_html=True)
-st.markdown(f'<p class="info-testo">Hai <span class="evidenza">{st.session_state.parte_nota}</span> mattoncini blu:</p>', unsafe_allow_html=True)
-
 st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}</p>', unsafe_allow_html=True)
 st.markdown('<p class="info-testo">Quanti ne mancano? 🤔</p>', unsafe_allow_html=True)
 
-# 6. Griglia di bottoni compatta
-# Creiamo un numero sufficiente di colonne per farle andare a capo automaticamente
+# 6. PULSANTIERA ORIZZONTALE (Usando molte colonne piccole)
+# Questo trucco crea una riga di bottoni che non va a capo in verticale su mobile
 scelta = None
-cols = st.columns(5) # Griglia fissa a 5 colonne per mobile
-for i in range(1, target):
-    # Usa l'operatore modulo per distribuire i bottoni nelle colonne
-    if cols[(i-1) % 5].button(str(i), key=f"btn_{i}"):
-        scelta = i
+# Creiamo tante colonne quanti sono i possibili bottoni
+col_list = st.columns(target) 
 
-# 7. Risposta
+for i in range(1, target):
+    with col_list[i-1]:
+        if st.button(str(i), key=f"btn_{i}"):
+            scelta = i
+
+# 7. Gestione Risposta
 if scelta is not None:
     if scelta == mancanti_reali:
         st.session_state.indovinato = True
@@ -102,5 +109,5 @@ if scelta is not None:
         st.session_state.ultima_scelta_errata = scelta
 
 if st.session_state.messaggio_errore and not st.session_state.indovinato:
-    st.error(f"Sbagliato! {st.session_state.parte_nota} + {st.session_state.ultima_scelta_errata} non fa {target}")
+    st.error(f"Riprova! {st.session_state.parte_nota} + {st.session_state.ultima_scelta_errata} non fa {target}")
     st.markdown(f'<p class="mattoncino-testo">{"🟦" * st.session_state.parte_nota}{"⬜" * st.session_state.ultima_scelta_errata}</p>', unsafe_allow_html=True)
